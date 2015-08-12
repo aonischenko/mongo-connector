@@ -102,6 +102,8 @@ def serialize(value):
     """If the value is an BSON ObjectId, cast it to a string."""
     if isinstance(value, bson.objectid.ObjectId):
         return str(value)
+    elif isinstance(value, object):
+        return str(value)
     else:
         return value
 
