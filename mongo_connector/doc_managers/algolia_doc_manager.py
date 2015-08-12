@@ -111,7 +111,7 @@ def serialize(value):
 def filter_value(value, expr):
     """Evaluate the given expression in the context of the given value."""
     if expr == "":
-        return True
+        return (value is not None)
     try:
         return eval(re.sub(r'\$_', 'value', expr))
     except Exception as e:
@@ -146,22 +146,24 @@ class DocManager(DocManagerBase):
         self.mutex = RLock()
         self.auto_commit = kwargs.pop('auto_commit', True)
         self.run_auto_commit()
+        self.rules_dir = kwargs.pop('rules_dir', "")
+        logging.info("Rules Dir : " + self.rules_dir)
         try:
-            json = open("algolia_fields_" + index + ".json", 'r')
+            json = open(self.rules_dir + "algolia_fields_" + index + ".json", 'r')
             self.attributes_filter = decoder.decode(json.read())
             logging.info("Algolia Connector: Start with filter.")
         except IOError:  # No "fields" filter file
             self.attributes_filter = None
             logging.info("Algolia Connector: Start without filter.")
         try:
-            json = open("algolia_remap_" + index + ".json", 'r')
+            json = open(self.rules_dir + "algolia_remap_" + index + ".json", 'r')
             self.attributes_remap = decoder.decode(json.read())
             logging.info("Algolia Connector: Start with remapper.")
         except IOError:  # No "remap" filter file
             self.attributes_remap = None
             logging.info("Algolia Connector: Start without remapper.")
         try:
-            f = open("algolia_postproc_" + index + ".py", 'r')
+            f = open(self.rules_dir + "algolia_postproc_" + index + ".py", 'r')
             self.postproc = f.read()
             logging.info("Algolia Connector: Start with post processing.")
         except IOError:  # No "postproc" filter file
@@ -193,7 +195,8 @@ class DocManager(DocManagerBase):
             if source_key == ['_ts'] and target_key == ["*ts*"]:
                 value = value if value else str(unix_time_millis())
 
-            set_at(remapped_doc, target_key, value)
+            if value:
+                set_at(remapped_doc, target_key, value)
         return remapped_doc
 
     def apply_filter(self, doc, filter):

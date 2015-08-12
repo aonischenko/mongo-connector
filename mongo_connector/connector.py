@@ -734,7 +734,8 @@ def get_config_options():
                 'targetURL': cli_values['target_url'],
                 'uniqueKey': cli_values['unique_key'],
                 'autoCommitInterval': cli_values['auto_commit_interval'],
-                'bulkSize': bulk_size
+                'bulkSize': bulk_size,
+                'rulesDir': cli_values['rules_dir']
             }]
 
         if not option.value:
@@ -759,6 +760,8 @@ def get_config_options():
                 dm['args'] = {}
             if not dm.get('bulkSize'):
                 dm['bulkSize'] = constants.DEFAULT_MAX_BULK
+            if not dm.get('rulesDir'):
+                dm['rulesDir'] = ""
 
             aci = dm['autoCommitInterval']
             if aci is not None and aci < 0:
@@ -790,7 +793,8 @@ def get_config_options():
             kwargs = {
                 'unique_key': dm['uniqueKey'],
                 'auto_commit_interval': dm['autoCommitInterval'],
-                'chunk_size': dm['bulkSize']
+                'chunk_size': dm['bulkSize'],
+                'rules_dir': dm['rulesDir']
             }
             for k in dm['args']:
                 if k not in kwargs:

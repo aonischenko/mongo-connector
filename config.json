@@ -51,7 +51,8 @@
             "targetURL": "localhost:9200",
             "__bulkSize": 1000,
             "__uniqueKey": "_id",
-            "__autoCommitInterval": null
+            "__autoCommitInterval": null,
+            "__rulesDir": "/"
         }
     ]
 }
