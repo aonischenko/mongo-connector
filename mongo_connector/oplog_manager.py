@@ -454,6 +454,7 @@ class OplogThread(threading.Thread):
                         LOG.debug("Upserted %d docs." % num)
                     try:
                         mapped_ns = self.dest_mapping.get(namespace, namespace)
+                        LOG.debug(doc)
                         dm.upsert(doc, mapped_ns, long_ts)
                         num_inserted += 1
                     except Exception:

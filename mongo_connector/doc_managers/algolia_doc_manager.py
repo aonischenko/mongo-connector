@@ -1,4 +1,4 @@
-# Copyright 2014 Algolia
+# Copyright 277014 Algolia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -102,10 +102,15 @@ def serialize(value):
     """If the value is an BSON ObjectId, cast it to a string."""
     if isinstance(value, bson.objectid.ObjectId):
         return str(value)
-    elif isinstance(value, object):
-        return str(value)
     else:
         return value
+
+
+def serializeId(value):
+    if isinstance(value, dict):
+        return str([val for (key, val) in sorted(value.items())])
+    else:
+        return serialize(value)
 
 
 def filter_value(value, expr):
@@ -113,7 +118,7 @@ def filter_value(value, expr):
     if expr == "":
         return (value is not None)
     try:
-        return eval(re.sub(r'\$_', 'value', expr))
+        return eval(re.sub(r'_\$', 'value', expr))
     except Exception as e:
         logging.warn("""
             Error raised from expression: {expr} with value {value}
@@ -133,7 +138,7 @@ class DocManager(DocManagerBase):
     BATCH_SIZE = 1000
     AUTO_COMMIT_DELAY_S = 10
 
-    def __init__(self, url, unique_key='_id', **kwargs):
+    def __init__(self, url, unique_key="_id", **kwargs):
         """Establish a connection to Algolia using target url
             'APPLICATION_ID:API_KEY:INDEX_NAME'
         """
@@ -195,7 +200,7 @@ class DocManager(DocManagerBase):
             if source_key == ['_ts'] and target_key == ["*ts*"]:
                 value = value if value else str(unix_time_millis())
 
-            if value:
+            if value is not None:
                 set_at(remapped_doc, target_key, value)
         return remapped_doc
 
@@ -258,18 +263,24 @@ class DocManager(DocManagerBase):
     def update(self, document_id, update_spec, namespace = None, timestamp = None):
         try:
             doc = self.index.getObject(str(document_id))
-        except AlgoliaException:
+        except algoliasearch.AlgoliaException:
             # The document is not in the index due to a delay or an error
             logging.warn("Update a missing object")
             doc = {}
             doc[self.unique_key] = str(document_id)
         self.upsert(self.apply_update(doc, update_spec), True)
 
+    def handle_command(self, doc, namespace = None, timestamp = None):
+        """ Multiple update by command a document into Algolia
+        """
+        logging.warn(str(doc))
+
+
     def upsert(self, doc, update = False, namespace = None, timestamp = None):
         """ Update or insert a document into Algolia
         """
         with self.mutex:
-            self.last_object_id = serialize(doc.get(self.unique_key) or doc['objectID'])
+            self.last_object_id = serializeId(doc.get(self.unique_key) or doc['objectID'])
             filtered_doc, state = self.apply_filter(self.apply_remap(doc),
                                                     self.attributes_filter)
             filtered_doc['objectID'] = self.last_object_id
