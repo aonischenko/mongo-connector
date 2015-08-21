@@ -262,12 +262,12 @@ class DocManager(DocManagerBase):
 
     def update(self, document_id, update_spec, namespace = None, timestamp = None):
         try:
-            doc = self.index.getObject(str(document_id))
+            doc = self.index.getObject(serializeId(document_id))
         except algoliasearch.AlgoliaException:
             # The document is not in the index due to a delay or an error
             logging.warn("Update a missing object")
             doc = {}
-            doc[self.unique_key] = str(document_id)
+            doc[self.unique_key] = serializeId(document_id)
         self.upsert(self.apply_update(doc, update_spec), True)
 
     def handle_command(self, doc, namespace = None, timestamp = None):
@@ -303,7 +303,7 @@ class DocManager(DocManagerBase):
         with self.mutex:
             self.batch.append(
                 {'action': 'deleteObject',
-                 'body': {'objectID': str(document_id)}})
+                 'body': {'objectID': serializeId(document_id)}})
             if len(self.batch) >= DocManager.BATCH_SIZE:
                 self.commit()
 
@@ -355,7 +355,7 @@ class DocManager(DocManagerBase):
         if last_object_id is None:
             return None
         try:
-            return self.index.getObject(str(last_object_id))
+            return self.index.getObject(serializeId(last_object_id))
         except algoliasearch.AlgoliaException as e:
             raise errors.ConnectionFailed(
                 "Could not connect to Algolia Search: %s" % e)
